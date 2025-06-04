@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Lokalni izbori RH 2021</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #f0f0f0;
+    }
+
+    header {
+      padding: 20px;
+      text-align: center;
+      background-color: #444;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    #slider-container {
+      padding: 10px;
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 26px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 34px;
+    }
+
+    .slider::before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+
+    .switch input:checked + .slider {
+      background-color: #727272;
+    }
+
+    .switch input:checked + .slider::before {
+      transform: translateX(24px);
+    }
+
+    #container {
+      display: flex;
+      width: 100vw;
+      height: 90vh;
+      justify-content: flex-start;
+      align-items: center;
+      padding-left: 15vw;
+      transition: padding-left 0.5s ease;
+    }
+
+    #container.shifted {
+      padding-left: 0;
+    }
+
+    svg {
+      width: 70vw;
+      height: 100%;
+      background: #f0f0f0;
+      transition: transform 0.5s ease;
+    }
+
+    #tooltip {
+      position: absolute;
+      background: rgba(50, 50, 50, 0.8);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 3px;
+      pointer-events: none;
+      font-size: 14px;
+      visibility: hidden;
+      transition: visibility 0.2s, opacity 0.2s;
+      opacity: 0;
+      white-space: nowrap;
+      z-index: 10;
+    }
+
+    #infoBox {
+      width: 0;
+      overflow: hidden;
+      transition: width 0.5s ease, padding 0.5s ease;
+      background-color: white;
+      box-shadow: -2px 0 5px rgba(0,0,0,0.2);
+      padding: 0 0;
+      font-size: 16px;
+    }
+
+    #infoBox.active {
+      width: 30vw;
+      padding: 20px;
+    }
+
+    #roundButtons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 10px 0;
+    }
+
+    .round-btn {
+      padding: 8px 16px;
+      font-size: 14px;
+      background-color: #444;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .round-btn.active {
+      background-color: #888;
+    }
+  </style>
+</head>
+<body>
+  <header>Lokalni izbori RH 2021</header>
+  <div id="slider-container">
+    <label class="switch">
+      <input type="checkbox" id="mapSwitch" />
+      <span class="slider"></span>
+    </label>
+    <span id="sliderLabel">Županije</span>
+  </div>
+  <div id="roundButtons">
+    <button class="round-btn active" data-round="1_krug_rezultati">1. Krug</button>
+    <button class="round-btn" data-round="2_krug_rezultati">2. Krug</button>
+    <button class="round-btn" data-round="3_krug_rezultati">3. Krug</button>
+  </div>
+  <div id="container">
+    <svg></svg>
+    <div id="infoBox"></div>
+  </div>
+  <div id="tooltip"></div>
+
+  <script>
+    const svg = d3.select("svg");
+    const tooltip = d3.select("#tooltip");
+    const infoBox = d3.select("#infoBox");
+    const container = d3.select("#container");
+    const width = window.innerWidth;
+    const height = window.innerHeight * 0.9;
+
+    const projection = d3.geoMercator();
+    const path = d3.geoPath().projection(projection);
+
+    let croRegions, croMunicipalities;
+    let selectedRound = "1_krug_rezultati";
+
+    // 1. Mapa za prevod iz naziva u geojsonu u službeni puni naziv za prikaz (tooltip, info)
+    const geoJsonToFullName = {
+      "Zagrebačka": "Zagrebačka županija",
+      "Krapinsko-Zagorska": "Krapinsko-zagorska županija",
+      "Sisacko-Moslavacka": "Sisačko-moslavačka županija",
+      "Karlovacka": "Karlovačka županija",
+      "Varaždinska": "Varaždinska županija",
+      "Koprivničko-Križevačka": "Koprivničko-križevačka županija",
+      "Bjelovarska-Bilogorska": "Bjelovarsko-bilogorska županija",
+      "Primorsko-Goranska": "Primorsko-goranska županija",
+      "Licko-Senjska": "Ličko-senjska županija",
+      "Viroviticko-Podravska": "Virovitičko-podravska županija",
+      "Požeško-Slavonska": "Požeško-slavonska županija",
+      "Brodsko-Posavska": "Brodsko-posavska županija",
+      "Zadarska": "Zadarska županija",
+      "Osjecko-Baranjska": "Osječko-baranjska županija",
+      "Šibensko-Kninska": "Šibensko-kninska županija",
+      "Vukovarsko-Srijemska": "Vukovarsko-srijemska županija",
+      "Splitsko-Dalmatinska": "Splitsko-dalmatinska županija",
+      "Istarska": "Istarska županija",
+      "Dubrovacko-Neretvanska": "Dubrovačko-neretvanska županija",
+      "Medimurska": "Međimurska županija",
+      "GradZagreb": "Grad Zagreb"
+    };
+    const zupanijaMap = {
+  "Zagrebačka": "01",
+  "Krapinsko-Zagorska": "02",
+  "Sisacko-Moslavacka": "03",
+  "Karlovacka": "04",
+  "Varaždinska": "05",
+  "Koprivničko-Križevačka": "06",
+  "Bjelovarska-Bilogorska": "07",
+  "Primorsko-Goranska": "08",
+  "Licko-Senjska": "09",
+  "Viroviticko-Podravska": "10",
+  "Požeško-Slavonska": "11",
+  "Brodsko-Posavska": "12",
+  "Zadarska": "13",
+  "Osjecko-Baranjska": "14",
+  "Šibensko-Kninska": "15",
+  "Vukovarsko-Srijemska": "16",
+  "Splitsko-Dalmatinska": "17",
+  "Istarska": "18",
+  "Dubrovacko-Neretvanska": "19",
+  "Medimurska": "20",
+  "GradZagreb": "21"
+};
+
+function getPrefixedZupanija(name) {
+  return zupanijaMap[name] || name;
+}
+
+
+    // Funkcija za mapiranje iz geojson naziva u puni službeni naziv (za tooltip i info)
+    function getFullName(geojsonName) {
+      return geoJsonToFullName[geojsonName] || geojsonName;
+    }
+
+    // Funkcija za mapiranje iz punog službenog naziva u folder
+    function mapirajFolder(puniNaziv) {
+  return puniNaziv
+}
+
+
+
+    // Prikaz tooltippa i info boxa s mapiranjem imena i pozivanjem podataka
+    function drawMap(geojsonData) {
+      svg.selectAll("*").remove();
+
+      projection.fitSize([width * 0.7, height], geojsonData);
+
+      svg.selectAll("path")
+        .data(geojsonData.features)
+        .enter()
+        .append("path")
+        .attr("d", path)
+        .attr("fill", "#cce5df")
+        .attr("stroke", "#2a6351")
+        .attr("stroke-width", 1)
+        .on("mouseover", function(event, d) {
+          d3.select(this).attr("fill", "#4c9e8f");
+          const geoName = d.properties.NAME_2 || d.properties.NAME_1;
+          const fullName = getFullName(geoName);
+
+          tooltip.style("visibility", "visible")
+            .style("opacity", 1)
+            .text(fullName)
+            .style("top", (event.pageY + 15) + "px")
+            .style("left", (event.pageX + 15) + "px");
+        })
+        .on("mouseout", function() {
+          d3.select(this).attr("fill", "#cce5df");
+          tooltip.style("visibility", "hidden")
+            .style("opacity", 0);
+        })
+        .on("click", function(event, d) {
+  const geoName = d.properties.NAME_2 || d.properties.NAME_1;
+  const fullName = getFullName(geoName);
+
+  const rawZupanija = d.properties.NAME_1;
+  const zupanijaNumber = getPrefixedZupanija(rawZupanija);
+  const zupanija = getFullName(rawZupanija)
+
+  const opcina = d.properties.NAME_2 || d.properties.NAME_1;
+
+  const url = `rezultati/${selectedRound}/${zupanijaNumber}_${zupanija}/CSV/${zupanijaNumber}_${opcina.toUpperCase()}_načelnik.csv`;
+
+
+  console.log("Fetch URL:", url);
+
+  fetch(url)
+    .then(response => {
+      if (!response.ok) throw new Error("Nema podataka za ovu jedinicu.");
+      return response.text();
+    })
+    .then(data => {
+      infoBox.classed("active", true);
+      infoBox.html(`<h2>${fullName}</h2><pre>${data}</pre>`);
+      if (!container.classed("shifted")) {
+        container.classed("shifted", true);
+      }
+    })
+    .catch(err => {
+      infoBox.classed("active", true);
+      infoBox.html(`<h2>${fullName}</h2><p>Podaci nisu dostupni.</p>`);
+      if (!container.classed("shifted")) {
+        container.classed("shifted", true);
+      }
+      console.error(err);
+    });
+});
+
+
+    }
+
+    // Učitavanje GeoJSON podataka i inicijalni crtež mape
+    Promise.all([
+      d3.json("cro_zupanije.json"), // zamijeni stvarnim putem do GeoJSON županija
+      d3.json("cro_opcine.json") // zamijeni stvarnim putem do GeoJSON općina
+    ]).then(([regions, municipalities]) => {
+      croRegions = regions;
+      croMunicipalities = municipalities;
+      drawMap(croRegions);
+    }).catch(err => {
+      console.error("Greška prilikom učitavanja GeoJSON-a:", err);
+    });
+
+    // Switch županije/općine
+    const mapSwitch = document.getElementById("mapSwitch");
+    const sliderLabel = document.getElementById("sliderLabel");
+
+    mapSwitch.addEventListener("change", () => {
+      if (mapSwitch.checked) {
+        drawMap(croMunicipalities);
+        sliderLabel.textContent = "Općine";
+      } else {
+        drawMap(croRegions);
+        sliderLabel.textContent = "Županije";
+      }
+      infoBox.classed("active", false);
+      container.classed("shifted", false);
+    });
+
+    // Gumbi za krugove izbora
+    const roundButtons = document.querySelectorAll(".round-btn");
+    roundButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        roundButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        selectedRound = btn.dataset.round;
+
+        infoBox.classed("active", false);
+        container.classed("shifted", false);
+      });
+    });
+
+  </script>
+</body>
+</html>
