@@ -282,12 +282,11 @@ function getPrefixedZupanija(name) {
 
   const rawZupanija = d.properties.NAME_1;
   const zupanijaNumber = getPrefixedZupanija(rawZupanija);
-  const zupanija = getFullName(rawZupanija)
+  const zupanija = getFullName(rawZupanija);
 
   const opcina = d.properties.NAME_2 || d.properties.NAME_1;
 
-  const url = `rezultati/${selectedRound}/${zupanijaNumber}_${zupanija}/CSV/${zupanijaNumber}_${opcina.toUpperCase()}_načelnik.csv`;
-
+  const url = `rezultati/${selectedRound}/${zupanijaNumber}_${zupanija}/CSV/${zupanijaNumber}_${opcina.toUpperCase()}_općinska vijeće.csv`;
 
   console.log("Fetch URL:", url);
 
@@ -297,19 +296,88 @@ function getPrefixedZupanija(name) {
       return response.text();
     })
     .then(data => {
+      // Koristi d3.dsvFormat sa separatorom ';'
+      const dsvParser = d3.dsvFormat(";");
+      const parsed = dsvParser.parse(data, d3.autoType);
+
+      if (!parsed || parsed.length === 0) throw new Error("Prazni podaci.");
+
+      // Uzimamo prvi red (ili ih možeš grupirati ako ima više BM-ova po općini)
+      const row = parsed[0];
+
+      // Nađi indeks zadnje fiksne kolone
+      const allColumns = parsed.columns;
+      console.log("Sve kolone:", allColumns);
+
+      const startIndex = allColumns.findIndex(col => col === "Nevažeći listići");
+      console.log("Index 'nevažeći':", startIndex);
+
+      // Stranke su sve kolone nakon tog indeksa
+      const partyColumns = allColumns.slice(startIndex + 1);
+
+      const chartData = partyColumns.map(party => ({
+        lista: party.trim(),
+        glasova: +row[party] || 0
+      })).filter(d => d.glasova > 0); // možeš izbaciti one s 0
+
+      console.log("chartData:", chartData);
+
+      // (opcionalno: sortiraj i uzmi top 10)
+      chartData.sort((a, b) => b.glasova - a.glasova);
+      // const topN = 10;
+      // const displayData = chartData.slice(0, topN);
+      const displayData = chartData;
+
+      // Dimenzije
+      const chartWidth = 450;
+      const chartHeight = 320;
+      const margin = { top: 30, right: 20, bottom: 60, left: 60 };
+
+      const x = d3.scaleBand()
+        .domain(displayData.map(d => d.lista))
+        .range([margin.left, chartWidth - margin.right])
+        .padding(0.1);
+
+      const y = d3.scaleLinear()
+        .domain([0, d3.max(displayData, d => d.glasova)]).nice()
+        .range([chartHeight - margin.bottom, margin.top]);
+
       infoBox.classed("active", true);
-      infoBox.html(`<h2>${fullName}</h2><pre>${data}</pre>`);
+      infoBox.html(`<h2>${fullName}</h2><svg width="${chartWidth}" height="${chartHeight}"></svg>`);
+      const svgChart = infoBox.select("svg");
+
+      // Crtanje stupaca
+      svgChart.selectAll("rect")
+        .data(displayData)
+        .enter()
+        .append("rect")
+        .attr("x", d => x(d.lista))
+        .attr("y", d => y(d.glasova))
+        .attr("height", d => y(0) - y(d.glasova))
+        .attr("width", x.bandwidth())
+        .attr("fill", "#4c9e8f");
+
+      // X os (rotirani nazivi stranaka)
+      svgChart.append("g")
+        .attr("transform", `translate(0,${chartHeight - margin.bottom})`)
+        .call(d3.axisBottom(x))
+        .selectAll("text")
+        .attr("transform", "rotate(-45)")
+        .style("text-anchor", "end");
+
+      // Y os
+      svgChart.append("g")
+        .attr("transform", `translate(${margin.left},0)`)
+        .call(d3.axisLeft(y));
+
       if (!container.classed("shifted")) {
         container.classed("shifted", true);
       }
     })
     .catch(err => {
-      infoBox.classed("active", true);
-      infoBox.html(`<h2>${fullName}</h2><p>Podaci nisu dostupni.</p>`);
-      if (!container.classed("shifted")) {
-        container.classed("shifted", true);
-      }
       console.error(err);
+      infoBox.classed("active", false);
+      // Možeš dodati prikaz greške korisniku ako želiš
     });
 });
 
