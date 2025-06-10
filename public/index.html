@@ -34,22 +34,22 @@
   <div id="tooltip"></div>
   <div id="legend" class="legend">
     <h3>Legenda:</h3>
-    <div class="legend-item">
+    <div class="legend-item" data-party="HDZ">
       <div class="legend-color" style="background-color: #2b6cb0;"></div> HDZ
     </div>
-    <div class="legend-item">
+    <div class="legend-item" data-party="SDP">
       <div class="legend-color" style="background-color: #e53e3e;"></div> SDP
     </div>
-    <div class="legend-item">
+    <div class="legend-item" data-party="MOŽEMO!">
       <div class="legend-color" style="background-color: #38a169;"></div> Možemo!
     </div>
-    <div class="legend-item">
+    <div class="legend-item" data-party="DP">
       <div class="legend-color" style="background-color: #f6ad55;"></div> Domovinski pokret
     </div>
-    <div class="legend-item">
+    <div class="legend-item" data-party="Most">
       <div class="legend-color" style="background-color: #9f7aea;"></div> Most
     </div>
-    <div class="legend-item">
+    <div class="legend-item" data-party="Ostali">
       <div class="legend-color" style="background-color: #a0aec0;"></div> Ostali
     </div>
   </div>
@@ -62,6 +62,9 @@
     const legend = d3.select("#legend");
     const width = window.innerWidth;
     const height = window.innerHeight * 0.9;
+    // Ove mape se pune kod bojenja karte
+let winnerMapZupanije = {};
+let winnerMapOpcine = {};
 
     const projection = d3.geoMercator();
     const path = d3.geoPath().projection(projection);
@@ -111,28 +114,7 @@
       "Most": "#c5aff2",
       "Ostali": "#c6ced9"
     };
-    const zupanijskiZupani = {
-      "Karlovačka županija": "HDZ",
-      "Sisačko-moslavačka županija": "HDZ",
-      "Požeško-slavonska županija": "HDZ",
-      "Osječko-baranjska županija": "HDZ",
-      "Virovitičko-podravska županija": "HDZ",
-      "Bjelovarsko-bilogorska županija": "HDZ",
-      "Međimurska županija": "NPS",
-      "Krapinsko-zagorska županija": "SDP",
-      "Dubrovačko-neretvanska županija": "HDZ",
-      "Splitsko-dalmatinska županija": "HDZ",
-      "Šibensko-kninska županija": "HDZ",
-      "Zadarska županija": "HDZ",
-      "Ličko-senjska županija": "HDZ",
-      "Primorsko-goranska županija": "SDP",
-      "Istarska županija": "Ostali",
-      "Brodsko-posavska županija": "HDZ",
-      "Koprivničko-križevačka županija": "SDP",
-      "Varaždinska županija": "HDZ",
-      "Zagrebačka županija": "Ostali"
-    };
-
+  
     const zupanijaMap = {
       "Zagrebačka": "01",
       "Krapinsko-Zagorska": "02",
@@ -178,6 +160,28 @@
         .replace(/\s+/g, '_')
         .replace(/[^\w_]/g, '');
     }
+    // Provjeri kojoj stranki pripada (prema ključnim riječima)
+      const partyPatterns = {
+        "HDZ": [
+          "HDZ", "HRVATSKA DEMOKRATSKA ZAJEDNICA",
+          "Ivan Celjak", "Antonija Jozić", "Nataša Tramišak", "Igor Andrović",
+          "Marko Marušič", "Blaž Pezo", "Blaženko Boban", "Paško Rakić",
+          "Josip Bilaver", "Ernest Petry", "Danijel Marušić", "Anđelko Stričak",
+          "Ivan Anušić", "Damir Dekanić", "Ivo Žinić", "Božidar Longin", "Stjepan Kožić", "Martina Furdek-Hajdin", "Darko Koren", "Marko Marušić", "Nikola Dobroslavić",
+        ],
+        "SDP": [
+          "SDP", "SOCIJALDEMOKRATSKA PARTIJA",
+          "Željko Kolar", "Ivica Lukanović", "Tomislav Golubić",
+          "Ranko Ostojić", "Zlatko Komadina"
+        ],
+        "MOŽEMO!": ["MOŽEMO", "Tomislav Tomašević"],
+        "Domovinski pokret": ["DOMOVINSKI POKRET", "DP"],
+        "Most": ["MOST"],
+        "Ostali": ["Matija Posavec", "Boris Miletić",
+          "Damir Bajs",
+          "Željko Lacković", "Darko Milinović",
+          "Marko Jelić", "Radimir Čačić", "Mate Vukušić"]
+      };
 
 
     // Helper funkcija za sigurno dohvaćanje CSV-a
@@ -230,28 +234,7 @@
     function getColorForWinner(winner) {
       if (!winner) return "#cce5df"; // Zadana boja
 
-      // Provjeri kojoj stranki pripada (prema ključnim riječima)
-      const partyPatterns = {
-        "HDZ": [
-          "HDZ", "HRVATSKA DEMOKRATSKA ZAJEDNICA",
-          "Ivan Celjak", "Antonija Jozić", "Nataša Tramišak", "Igor Andrović",
-          "Marko Marušič", "Blaž Pezo", "Blaženko Boban", "Paško Rakić",
-          "Josip Bilaver", "Ernest Petry", "Danijel Marušić", "Anđelko Stričak",
-          "Ivan Anušić", "Damir Dekanić", "Ivo Žinić", "Božidar Longin", "Stjepan Kožić", "Martina Furdek-Hajdin", "Darko Koren", "Marko Marušić", "Nikola Dobroslavić",
-        ],
-        "SDP": [
-          "SDP", "SOCIJALDEMOKRATSKA PARTIJA",
-          "Željko Kolar", "Ivica Lukanović", "Tomislav Golubić",
-          "Ranko Ostojić", "Zlatko Komadina"
-        ],
-        "MOŽEMO!": ["MOŽEMO", "Tomislav Tomašević"],
-        "Domovinski pokret": ["DOMOVINSKI POKRET", "DP"],
-        "Most": ["MOST"],
-        "Ostali": ["Matija Posavec", "Boris Miletić",
-          "Damir Bajs",
-          "Željko Lacković", "Darko Milinović",
-          "Marko Jelić", "Radimir Čačić", "Mate Vukušić"]
-      };
+      
 
 
       // Pretvori u velika slova za case-insensitive usporedbu
@@ -267,41 +250,187 @@
       console.warn(`⚠️ Nije prepoznat kandidat: ${winner} → koristi se 'Ostali' boja`);
       return partyColors["Ostali"];
     }
+    
+    document.querySelectorAll(".legend-item").forEach(item => {
+  item.style.cursor = "pointer";
+  item.addEventListener("click", () => {
+    const party = item.dataset.party || item.textContent.trim();
+    const isOpcina = mapSwitch.checked;
+    const activeMap = isOpcina ? winnerMapOpcine : winnerMapZupanije;
+
+    if (!activeMap || Object.keys(activeMap).length === 0) {
+      console.warn("❌ winnerMap nije još spreman");
+      return;
+    }
+
+    const matched = [];
+
+    svg.selectAll("path").each(function (d) {
+      const rawName = d.properties.NAME_2 || d.properties.NAME_1 || d.properties.NAME;
+      const fullName = getFullName(rawName);
+      const pobjednik = activeMap[fullName];
+
+      if (pobjednik === party) {
+        matched.push(fullName);
+        d3.select(this).attr("fill", getColorForWinner(pobjednik));
+      } else {
+        d3.select(this).attr("fill", "#ccc");
+      }
+    });
+
+    infoBox.classed("active", true);
+    infoBox.html(`<h2>${party} – pobjede u ${isOpcina ? "općinama" : "županijama"}:</h2>
+      <ul>${matched.map(n => `<li>${n}</li>`).join("")}</ul>`);
+
+    if (!container.classed("shifted")) {
+      container.classed("shifted", true);
+    }
+
+    if (matched.length === 0) {
+      console.warn("⚠️ Nema pronađenih jedinica za", party);
+    }
+  });
+});
+
+function handleLegendClick(selectedParty) {
+  // Posebna obrada za Možemo!
+  if (selectedParty === "Možemo!" || selectedParty === "MOŽEMO!") {
+    const zagrebName = "Grad Zagreb";
+
+    svg.selectAll("path").each(function (d) {
+      const raw = d.properties.NAME_1 || d.properties.NAME_2 || d.properties.NAME;
+      const name = getFullName(raw);
+
+      if (name === zagrebName) {
+        d3.select(this).attr("fill", partyColors["MOŽEMO!"]);
+      } else {
+        d3.select(this).attr("fill", "#ccc");
+      }
+    });
+
+    infoBox.classed("active", true);
+    infoBox.html(`
+      <h2>Možemo! – pobjeda u:</h2>
+      <ul><li class="clickable-region" data-name="${zagrebName}">${zagrebName}</li></ul>
+    `);
+    if (!container.classed("shifted")) container.classed("shifted", true);
+
+    // Aktiviraj klik za Zagreb
+    infoBox.selectAll(".clickable-region").on("click", function () {
+      const ime = d3.select(this).attr("data-name");
+
+      svg.selectAll("path").each(function (d) {
+        const raw = d.properties.NAME_2 || d.properties.NAME_1 || d.properties.NAME;
+        const fullName = getFullName(raw);
+        if (fullName === ime) {
+          this.dispatchEvent(new MouseEvent("click"));
+        }
+      });
+    });
+
+    return;
+  }
+
+  // Nastavi za ostale stranke
+  const map = mapSwitch.checked ? winnerMapOpcine : winnerMapZupanije;
+
+  if (!Object.keys(map).length) {
+    console.warn("⚠️ winnerMap nije još spreman");
+    return;
+  }
+
+  const jedinice = Object.entries(map).filter(([_, kandidat]) => {
+    const stranka = getPartyNameFromCandidate(kandidat);
+    return stranka === selectedParty;
+  });
+
+  if (jedinice.length === 0) {
+    console.warn(`⚠️ Nema pronađenih jedinica za ${selectedParty}`);
+    return;
+  }
+
+  // Istakni na karti
+  svg.selectAll("path").each(function (d) {
+    const name = getFullName(d.properties.NAME_2 || d.properties.NAME_1 || d.properties.NAME);
+    const match = jedinice.find(([ime]) => ime === name);
+    d3.select(this).attr("fill", match ? getColorForWinner(match[1]) : "#ccc");
+  });
+
+  // InfoBox s klikabilnim popisom
+  infoBox.classed("active", true);
+  const list = jedinice
+    .map(([ime]) => `<li class="clickable-region" data-name="${ime}">${ime}</li>`)
+    .join("");
+  infoBox.html(`
+    <h2>${selectedParty} – pobjedničke jedinice</h2>
+    <ul>${list}</ul>
+  `);
+
+  // Dodaj klikove
+  infoBox.selectAll(".clickable-region").on("click", function () {
+    const ime = d3.select(this).attr("data-name");
+
+    svg.selectAll("path").each(function (d) {
+      const raw = d.properties.NAME_2 || d.properties.NAME_1 || d.properties.NAME;
+      const fullName = getFullName(raw);
+      if (fullName === ime) {
+        this.dispatchEvent(new MouseEvent("click"));
+      }
+    });
+  });
+
+  if (!container.classed("shifted")) container.classed("shifted", true);
+
+  console.log("Map:", map);
+  console.log("Tražim jedinice za:", selectedParty);
+  console.log("Rezultat:", jedinice);
+}
+
+
+
 
     // Funkcija za bojanje općina prema pobjedničkim strankama
     async function colorMunicipalities() {
-      const paths = svg.selectAll("path").nodes();
+      winnerMapOpcine = {}; // reset
+const paths = svg.selectAll("path").nodes();
 
-      for (const pathEl of paths) {
-        const d = d3.select(pathEl).datum();
-        const geoName = d.properties.NAME_2 || d.properties.NAME_1;
-        const rawZupanija = d.properties.NAME_1;
-        const zupanija = getFullName(rawZupanija);
-        const zupanijaNumber = getPrefixedZupanija(rawZupanija);
-        const opcina = normalizeName(d.properties.NAME_2) || d.properties.NAME_1;
-        const baseUrl = `rezultati/1_krug_rezultati/${zupanijaNumber}_${zupanija}/CSV/`;
-        const baseFileName = `${zupanijaNumber}_${opcina.toUpperCase()}`;
-        const firstUrl = `${baseUrl}${baseFileName}_općinska vijeće.csv`;
-        const fallbackUrl = `${baseUrl}${baseFileName}_gradsko vijeće.csv`;
+for (const pathEl of paths) {
+  const d = d3.select(pathEl).datum();
+  const geoName = d.properties.NAME_2 || d.properties.NAME_1;
+  const rawZupanija = d.properties.NAME_1;
+  const zupanija = getFullName(rawZupanija);
+  const zupanijaNumber = getPrefixedZupanija(rawZupanija);
+  const opcina = normalizeName(d.properties.NAME_2) || d.properties.NAME_1;
+  const baseUrl = `rezultati/1_krug_rezultati/${zupanijaNumber}_${zupanija}/CSV/`;
+  const baseFileName = `${zupanijaNumber}_${opcina.toUpperCase()}`;
+  const firstUrl = `${baseUrl}${baseFileName}_općinska vijeće.csv`;
+  const fallbackUrl = `${baseUrl}${baseFileName}_gradsko vijeće.csv`;
 
-        try {
-          let csvData = await tryFetchCsv(firstUrl);
-          if (!csvData) {
-            csvData = await tryFetchCsv(fallbackUrl);
-            if (!csvData) continue;
-          }
+  try {
+    let csvData = await tryFetchCsv(firstUrl);
+    if (!csvData) {
+      csvData = await tryFetchCsv(fallbackUrl);
+      if (!csvData) continue;
+    }
 
-          const winner = await determineCouncilWinner(csvData);
-          if (winner) {
-            const color = getColorForWinner(winner);
-            d3.select(pathEl).attr("fill", color);
-          } else {
-            console.warn("Nema pobjednika za:", geoName);
-          }
-        } catch (error) {
-          console.error("Greška pri bojanju:", geoName, error);
-        }
-      }
+    const winner = await determineCouncilWinner(csvData);
+    if (winner) {
+      const color = getColorForWinner(winner);
+      d3.select(pathEl).attr("fill", color);
+      const fullName = getFullName(geoName); // koristi puni naziv kao ključ
+      winnerMapOpcine[fullName] = winner;
+    } else {
+      console.warn("Nema pobjednika za:", geoName);
+    }
+  } catch (error) {
+    console.error("Greška pri bojanju:", geoName, error);
+  }
+  winnerMapOpcine = { ...winnerMapOpcine }; // to "aktivira" vanjski pristup
+
+}
+
+
+
     }
     async function colorZupanije() {
       try {
@@ -458,7 +587,63 @@
           d3.select(this).attr("fill", "#ccc");
         }
       });
+      // spremi mapu
+winnerMapZupanije = { ...winnerMap }; // za klik funkciju
     }
+
+function highlightRegionsForParty(party) {
+  const targetMap = mapSwitch.checked ? winnerMapOpcine : winnerMapZupanije;
+  const matches = [];
+
+  svg.selectAll("path").each(function (d) {
+    const raw = mapSwitch.checked
+      ? d.properties.NAME_2 || d.properties.NAME
+      : d.properties.NAME_1 || d.properties.NAME;
+    const fullName = getFullName(raw);
+    const pobjednik = targetMap[fullName];
+
+    if (pobjednik === party) {
+      d3.select(this)
+        .attr("stroke", "#000")
+        .attr("stroke-width", 2);
+      matches.push(fullName);
+    } else {
+      d3.select(this)
+        .attr("stroke", "#aaa")
+        .attr("stroke-width", 0.5);
+    }
+  });
+
+  // Prikaži infobox
+  infoBox.classed("active", true);
+  infoBox.html(`
+    <h2>${party} – pobjede u ${mapSwitch.checked ? "općinama" : "županijama"}</h2>
+    <ul>${matches.map(name => `<li>${name}</li>`).join("")}</ul>
+  `);
+
+  if (!container.classed("shifted")) {
+    container.classed("shifted", true);
+  }
+}
+
+// Klik handler
+d3.selectAll(".legend-item").on("click", function () {
+  const party = d3.select(this).text().trim().split("\n")[0].trim(); // Uzimamo naziv stranke
+  handleLegendClick(party);
+});
+function getPartyNameFromCandidate(kandidat) {
+  const winnerUpper = kandidat.toUpperCase();
+
+  for (const [party, patterns] of Object.entries(partyPatterns)) {
+    if (patterns.some(pattern => winnerUpper.includes(pattern.toUpperCase()))) {
+      return party;
+    }
+  }
+
+  return "Ostali";
+}
+
+
 
 
 
@@ -468,7 +653,7 @@
       svg.selectAll("*").remove();
       projection.fitSize([width * 0.7, height], geojsonData);
 
-      legend.style("display", isMunicipalities ? "block" : "none");
+      legend.style("display", isMunicipalities ? "block" : "block");
 
       svg.selectAll("path")
         .data(geojsonData.features)
@@ -686,8 +871,7 @@
                 .attr("fill", "white")
                 .attr("font-size", "12px")
                 .text(d => ((d.glasova / totalGlasova) * 100).toFixed(1) + "%")
-                .attr("viewBox", `0 0 ${chartWidth} ${chartHeight}`)
-  .attr("preserveAspectRatio", "xMidYMid meet");
+                
 
               
 
@@ -782,6 +966,10 @@
               `);
 
               const svgChart = infoBox.select("#main-bar-chart");
+              svgChart
+  .attr("viewBox", `0 0 ${chartWidth} ${chartHeight}`)
+  .attr("preserveAspectRatio", "xMidYMid meet");
+
               const turnoutSvg = infoBox.select("#turnout-chart");
               const turnoutData = parsed.map((row, i) => {
                 const glasovalo = +row["Glasovalo birača (po listićima)"] || 0;
