@@ -1,177 +1,65 @@
 <!DOCTYPE html>
 <html lang="hr">
+
 <head>
   <meta charset="UTF-8" />
   <title>Lokalni izbori RH 2021</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
-  <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-      background-color: #f0f0f0;
-    }
-
-    header {
-      padding: 20px;
-      text-align: center;
-      background-color: #444;
-      color: white;
-      font-size: 24px;
-      font-weight: bold;
-    }
-
-    #slider-container {
-      padding: 10px;
-      text-align: center;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 50px;
-      height: 26px;
-    }
-
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #ccc;
-      transition: 0.4s;
-      border-radius: 34px;
-    }
-
-    .slider::before {
-      position: absolute;
-      content: "";
-      height: 20px;
-      width: 20px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: 0.4s;
-      border-radius: 50%;
-    }
-
-    .switch input:checked + .slider {
-      background-color: #727272;
-    }
-
-    .switch input:checked + .slider::before {
-      transform: translateX(24px);
-    }
-
-    #container {
-      display: flex;
-      width: 100vw;
-      height: 90vh;
-      justify-content: flex-start;
-      align-items: center;
-      padding-left: 15vw;
-      transition: padding-left 0.5s ease;
-    }
-
-    #container.shifted {
-      padding-left: 0;
-    }
-
-    svg {
-      width: 70vw;
-      height: 100%;
-      background: #f0f0f0;
-      transition: transform 0.5s ease;
-    }
-
-    #tooltip {
-      position: absolute;
-      background: rgba(50, 50, 50, 0.8);
-      color: white;
-      padding: 5px 10px;
-      border-radius: 3px;
-      pointer-events: none;
-      font-size: 14px;
-      visibility: hidden;
-      transition: visibility 0.2s, opacity 0.2s;
-      opacity: 0;
-      white-space: nowrap;
-      z-index: 10;
-    }
-
-    #infoBox {
-      width: 0;
-      overflow: hidden;
-      transition: width 0.5s ease, padding 0.5s ease;
-      background-color: white;
-      box-shadow: -2px 0 5px rgba(0,0,0,0.2);
-      padding: 0 0;
-      font-size: 16px;
-    }
-
-    #infoBox.active {
-      width: 30vw;
-      padding: 20px;
-    }
-
-    #roundButtons {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin: 10px 0;
-    }
-
-    .round-btn {
-      padding: 8px 16px;
-      font-size: 14px;
-      background-color: #444;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    .round-btn.active {
-      background-color: #888;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <header>Lokalni izbori RH 2021</header>
-  <div id="slider-container">
-    <label class="switch">
-      <input type="checkbox" id="mapSwitch" />
-      <span class="slider"></span>
-    </label>
-    <span id="sliderLabel">Županije</span>
-  </div>
-  <div id="roundButtons">
-    <button class="round-btn active" data-round="1_krug_rezultati">1. Krug</button>
-    <button class="round-btn" data-round="2_krug_rezultati">2. Krug</button>
-    <button class="round-btn" data-round="3_krug_rezultati">3. Krug</button>
-  </div>
+  <header>
+    <span>Lokalni izbori RH 2021</span>
+    <div id="header-controls">
+      <div id="slider-container">
+        <label class="switch">
+          <input type="checkbox" id="mapSwitch" />
+          <span class="slider"></span>
+        </label>
+        <span id="sliderLabel">Županije</span>
+      </div>
+      <div id="roundButtons">
+        <button class="round-btn active" data-round="1_krug_rezultati">1. Krug</button>
+        <button class="round-btn" data-round="2_krug_rezultati">2. Krug</button>
+        <button class="round-btn" data-round="3_krug_rezultati">3. Krug</button>
+      </div>
+    </div>
+  </header>
+
   <div id="container">
     <svg></svg>
     <div id="infoBox"></div>
   </div>
   <div id="tooltip"></div>
+  <div id="legend" class="legend">
+    <h3>Legenda:</h3>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #2b6cb0;"></div> HDZ
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #e53e3e;"></div> SDP
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #38a169;"></div> Možemo!
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #f6ad55;"></div> Domovinski pokret
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #9f7aea;"></div> Most
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #a0aec0;"></div> Ostali
+    </div>
+  </div>
 
   <script>
     const svg = d3.select("svg");
     const tooltip = d3.select("#tooltip");
     const infoBox = d3.select("#infoBox");
     const container = d3.select("#container");
+    const legend = d3.select("#legend");
     const width = window.innerWidth;
     const height = window.innerHeight * 0.9;
 
@@ -181,7 +69,17 @@
     let croRegions, croMunicipalities;
     let selectedRound = "1_krug_rezultati";
 
-    // 1. Mapa za prevod iz naziva u geojsonu u službeni puni naziv za prikaz (tooltip, info)
+    // Boje za stranke
+    const partyColors = {
+      "HDZ": "#2b6cb0",
+      "SDP": "#e53e3e",
+      "MOŽEMO!": "#38a169",
+      "Domovinski pokret": "#f6ad55",
+      "Most": "#9f7aea",
+      "Ostali": "#a0aec0"
+    };
+
+    // Mape za prevod naziva
     const geoJsonToFullName = {
       "Zagrebačka": "Zagrebačka županija",
       "Krapinsko-Zagorska": "Krapinsko-zagorska županija",
@@ -205,52 +103,372 @@
       "Medimurska": "Međimurska županija",
       "GradZagreb": "Grad Zagreb"
     };
+    const lighterPartyColors = {
+      "HDZ": "#80a7d0",
+      "SDP": "#ef8b8b",
+      "MOŽEMO!": "#88c7a5",
+      "Domovinski pokret": "#face99",
+      "Most": "#c5aff2",
+      "Ostali": "#c6ced9"
+    };
+    const zupanijskiZupani = {
+      "Karlovačka županija": "HDZ",
+      "Sisačko-moslavačka županija": "HDZ",
+      "Požeško-slavonska županija": "HDZ",
+      "Osječko-baranjska županija": "HDZ",
+      "Virovitičko-podravska županija": "HDZ",
+      "Bjelovarsko-bilogorska županija": "HDZ",
+      "Međimurska županija": "NPS",
+      "Krapinsko-zagorska županija": "SDP",
+      "Dubrovačko-neretvanska županija": "HDZ",
+      "Splitsko-dalmatinska županija": "HDZ",
+      "Šibensko-kninska županija": "HDZ",
+      "Zadarska županija": "HDZ",
+      "Ličko-senjska županija": "HDZ",
+      "Primorsko-goranska županija": "SDP",
+      "Istarska županija": "Ostali",
+      "Brodsko-posavska županija": "HDZ",
+      "Koprivničko-križevačka županija": "SDP",
+      "Varaždinska županija": "HDZ",
+      "Zagrebačka županija": "Ostali"
+    };
+
     const zupanijaMap = {
-  "Zagrebačka": "01",
-  "Krapinsko-Zagorska": "02",
-  "Sisacko-Moslavacka": "03",
-  "Karlovacka": "04",
-  "Varaždinska": "05",
-  "Koprivničko-Križevačka": "06",
-  "Bjelovarska-Bilogorska": "07",
-  "Primorsko-Goranska": "08",
-  "Licko-Senjska": "09",
-  "Viroviticko-Podravska": "10",
-  "Požeško-Slavonska": "11",
-  "Brodsko-Posavska": "12",
-  "Zadarska": "13",
-  "Osjecko-Baranjska": "14",
-  "Šibensko-Kninska": "15",
-  "Vukovarsko-Srijemska": "16",
-  "Splitsko-Dalmatinska": "17",
-  "Istarska": "18",
-  "Dubrovacko-Neretvanska": "19",
-  "Medimurska": "20",
-  "GradZagreb": "21"
-};
+      "Zagrebačka": "01",
+      "Krapinsko-Zagorska": "02",
+      "Sisacko-Moslavacka": "03",
+      "Karlovacka": "04",
+      "Varaždinska": "05",
+      "Koprivničko-Križevačka": "06",
+      "Bjelovarska-Bilogorska": "07",
+      "Primorsko-Goranska": "08",
+      "Licko-Senjska": "09",
+      "Viroviticko-Podravska": "10",
+      "Požeško-Slavonska": "11",
+      "Brodsko-Posavska": "12",
+      "Zadarska": "13",
+      "Osjecko-Baranjska": "14",
+      "Šibensko-Kninska": "15",
+      "Vukovarsko-Srijemska": "16",
+      "Splitsko-Dalmatinska": "17",
+      "Istarska": "18",
+      "Dubrovacko-Neretvanska": "19",
+      "Medimurska": "20",
+      "Grad Zagreb": "21",
+      "GradZagreb": "21"
+    };
 
-function getPrefixedZupanija(name) {
-  return zupanijaMap[name] || name;
-}
+    function getPrefixedZupanija(name) {
+      return zupanijaMap[name] || name;
+    }
 
-
-    // Funkcija za mapiranje iz geojson naziva u puni službeni naziv (za tooltip i info)
     function getFullName(geojsonName) {
       return geoJsonToFullName[geojsonName] || geojsonName;
     }
 
-    // Funkcija za mapiranje iz punog službenog naziva u folder
-    function mapirajFolder(puniNaziv) {
-  return puniNaziv
-}
+    function normalizeName(name) {
+      return name
+        .toLowerCase()
+        .replace(/-/g, ' ')
+        .replace(/š/g, 's')
+        .replace(/đ/g, 'd')
+        .replace(/č/g, 'c')
+        .replace(/ć/g, 'c')
+        .replace(/ž/g, 'z')
+        .replace(/\s+/g, '_')
+        .replace(/[^\w_]/g, '');
+    }
+
+
+    // Helper funkcija za sigurno dohvaćanje CSV-a
+    async function tryFetchCsv(url) {
+      try {
+        const response = await fetch(url);
+        return response.ok ? await response.text() : null;
+      } catch {
+        return null;
+      }
+    }
+
+
+    // Funkcija za određivanje pobjednika iz CSV podataka vijeća
+    async function determineCouncilWinner(csvData) {
+      if (!csvData) return null;
+
+      const dsvParser = d3.dsvFormat(";");
+      const parsed = dsvParser.parse(csvData, d3.autoType);
+
+      if (!parsed || parsed.length === 0) return null;
+
+      const allColumns = parsed.columns;
+      const startIndex = allColumns.findIndex(col => col === "Nevažeći listići");
+      const partyColumns = allColumns.slice(startIndex + 1);
+
+      // Izračunaj ukupno važećih glasova
+      const validVotes = parsed.reduce((sum, row) => {
+        return sum + partyColumns.reduce((rowSum, party) => {
+          return rowSum + Number(row[party]) || 0;
+        }, 0);
+      }, 0);
+
+      // Pronađi stranku s najviše glasova
+      let winner = null;
+      let maxVotes = 0;
+
+      partyColumns.forEach(party => {
+        const votes = parsed.reduce((sum, row) => sum + (Number(row[party]) || 0), 0);
+        if (votes > maxVotes) {
+          maxVotes = votes;
+          winner = party;
+        }
+      });
+
+      return winner;
+    }
+
+    // Poboljšana funkcija za dobivanje boje na temelju pobjednika
+    function getColorForWinner(winner) {
+      if (!winner) return "#cce5df"; // Zadana boja
+
+      // Provjeri kojoj stranki pripada (prema ključnim riječima)
+      const partyPatterns = {
+        "HDZ": [
+          "HDZ", "HRVATSKA DEMOKRATSKA ZAJEDNICA",
+          "Ivan Celjak", "Antonija Jozić", "Nataša Tramišak", "Igor Andrović",
+          "Marko Marušič", "Blaž Pezo", "Blaženko Boban", "Paško Rakić",
+          "Josip Bilaver", "Ernest Petry", "Danijel Marušić", "Anđelko Stričak",
+          "Ivan Anušić", "Damir Dekanić", "Ivo Žinić", "Božidar Longin", "Stjepan Kožić", "Martina Furdek-Hajdin", "Darko Koren", "Marko Marušić", "Nikola Dobroslavić",
+        ],
+        "SDP": [
+          "SDP", "SOCIJALDEMOKRATSKA PARTIJA",
+          "Željko Kolar", "Ivica Lukanović", "Tomislav Golubić",
+          "Ranko Ostojić", "Zlatko Komadina"
+        ],
+        "MOŽEMO!": ["MOŽEMO", "Tomislav Tomašević"],
+        "Domovinski pokret": ["DOMOVINSKI POKRET", "DP"],
+        "Most": ["MOST"],
+        "Ostali": ["Matija Posavec", "Boris Miletić",
+          "Damir Bajs",
+          "Željko Lacković", "Darko Milinović",
+          "Marko Jelić", "Radimir Čačić", "Mate Vukušić"]
+      };
+
+
+      // Pretvori u velika slova za case-insensitive usporedbu
+      const winnerUpper = winner.toUpperCase();
+
+      for (const [party, patterns] of Object.entries(partyPatterns)) {
+        if (patterns.some(pattern => winnerUpper.includes(pattern.toUpperCase()))) {
+          console.log(`✅ Bojam za kandidata: ${winner} → stranka: ${party}`);
+          return partyColors[party];
+        }
+      }
+
+      console.warn(`⚠️ Nije prepoznat kandidat: ${winner} → koristi se 'Ostali' boja`);
+      return partyColors["Ostali"];
+    }
+
+    // Funkcija za bojanje općina prema pobjedničkim strankama
+    async function colorMunicipalities() {
+      const paths = svg.selectAll("path").nodes();
+
+      for (const pathEl of paths) {
+        const d = d3.select(pathEl).datum();
+        const geoName = d.properties.NAME_2 || d.properties.NAME_1;
+        const rawZupanija = d.properties.NAME_1;
+        const zupanija = getFullName(rawZupanija);
+        const zupanijaNumber = getPrefixedZupanija(rawZupanija);
+        const opcina = normalizeName(d.properties.NAME_2) || d.properties.NAME_1;
+        const baseUrl = `rezultati/1_krug_rezultati/${zupanijaNumber}_${zupanija}/CSV/`;
+        const baseFileName = `${zupanijaNumber}_${opcina.toUpperCase()}`;
+        const firstUrl = `${baseUrl}${baseFileName}_općinska vijeće.csv`;
+        const fallbackUrl = `${baseUrl}${baseFileName}_gradsko vijeće.csv`;
+
+        try {
+          let csvData = await tryFetchCsv(firstUrl);
+          if (!csvData) {
+            csvData = await tryFetchCsv(fallbackUrl);
+            if (!csvData) continue;
+          }
+
+          const winner = await determineCouncilWinner(csvData);
+          if (winner) {
+            const color = getColorForWinner(winner);
+            d3.select(pathEl).attr("fill", color);
+          } else {
+            console.warn("Nema pobjednika za:", geoName);
+          }
+        } catch (error) {
+          console.error("Greška pri bojanju:", geoName, error);
+        }
+      }
+    }
+    async function colorZupanije() {
+      try {
+        const response = await fetch("rezultati/1_krug_rezultati/ukupno_glasova_po_zupanijama_1_krug_rezultati.csv");
+        const text = await response.text();
+        const data = d3.csvParse(text);
+
+        const winnersByZupanija = {};
+
+        data.forEach(d => {
+          if (!d["Županija"]) return; // zaštita
+          const zupanija = d["Županija"].trim();
+          const entries = Object.entries(d).filter(([k, v]) => k !== "Županija");
+          const sorted = entries.sort((a, b) => +b[1] - +a[1]);
+          winnersByZupanija[zupanija] = sorted[0][0];
+        });
+
+        svg.selectAll("path").each(function (d) {
+          const rawName = d.properties.NAME_1 || d.properties.NAME || "";
+          const fullName = getFullName(rawName.trim());
+          const winner = winnersByZupanija[fullName];
+          if (winner) {
+            d3.select(this).attr("fill", getColorForWinner(winner));
+          }
+        });
+      } catch (err) {
+        console.error("Greška pri bojanju županija:", err);
+      }
+    }
+    const kandidatStrankaMap = {
+      "Ivan Celjak": "HDZ",
+      "Antonija Jozić": "HDZ",
+      "Nataša Tramišak": "HDZ",
+      "Igor Andrović": "HDZ",
+      "Marko Marušič": "HDZ",
+      "Matija Posavec": "Ostali",
+      "Željko Kolar": "SDP",
+      "Blaž Pezo": "HDZ",
+      "Blaženko Boban": "HDZ",
+      "Paško Rakić": "HDZ",
+      "Josip Bilaver": "HDZ",
+      "Ernest Petry": "HDZ",
+      "Ivica Lukanović": "SDP",
+      "Boris Miletić": "Ostali",
+      "Danijel Marušić": "HDZ",
+      "Tomislav Golubić": "SDP",
+      "Anđelko Stričak": "HDZ",
+      "Stjepan Kožić": "HDZ",
+      "Tomislav Tomašević": "MOŽEMO!",
+      "Martina Furdek-Hajdin": "HDZ",
+      "Darko Koren": "HDZ",
+      "Marko Marušić": "HDZ",
+      "Damir Bajs": "Ostali",
+      "Zlatko Komadina": "SDP",
+      "Darko Milinović": "Ostali",
+      "Božidar Longin": "Ostali",
+      "Ivan Anušić": "HDZ",
+      "Marko Jelić": "Ostali",
+      "Damir Dekanić": "HDZ",
+      "Nikola Dobrosavić": "HDZ",
+    };
+
+    async function colorZupanijePoZupanu() {
+      const rounds = [];
+      if (selectedRound === "3_krug_rezultati") {
+        rounds.push("3_krug_rezultati", "2_krug_rezultati", "1_krug_rezultati");
+      } else if (selectedRound === "2_krug_rezultati") {
+        rounds.push("2_krug_rezultati", "1_krug_rezultati");
+      } else {
+        rounds.push("1_krug_rezultati");
+      }
+
+      const winnerMap = {};
+
+      for (const d of croRegions.features) {
+        const rawName = d.properties.NAME_1 || d.properties.NAME;
+        const zupanija = getFullName(rawName);
+        const zupanijaNumber = getPrefixedZupanija(rawName);
+        let winner = null;
+
+        for (const round of rounds) {
+          const folder = `${zupanijaNumber}_${zupanija}`;
+          let file = `${zupanijaNumber}_župani.csv`;
+          if (zupanijaNumber === "21") {
+            file = "21_GRAD_ZAGREB_gradonačelnik.csv";
+          }
+
+          const url = `rezultati/${round}/${folder}/CSV/${file}`;
+          console.log(`📁 Provjera datoteke: ${url}`);
+
+          try {
+            const response = await fetch(url);
+            if (!response.ok) continue;
+
+            const text = await response.text();
+            const parser = d3.dsvFormat(";");
+            const data = parser.parse(text);
+
+            if (!data || data.length === 0) continue;
+
+            const columns = data.columns;
+            const startIndex = columns.indexOf("Nevažeći listići");
+            if (startIndex === -1) continue;
+
+            const kandidatColumns = columns.slice(startIndex + 1);
+
+            const glasoviPoKandidatu = {};
+            let totalGlasova = 0;
+
+            for (const row of data) {
+              for (const kandidat of kandidatColumns) {
+                const glasova = +row[kandidat] || 0;
+                glasoviPoKandidatu[kandidat] = (glasoviPoKandidatu[kandidat] || 0) + glasova;
+                totalGlasova += glasova;
+              }
+            }
+
+            const sorted = Object.entries(glasoviPoKandidatu).sort((a, b) => b[1] - a[1]);
+            const [pobjednik, glasova] = sorted[0];
+            const postotak = (glasova / totalGlasova) * 100;
+
+            if (postotak > 50) {
+              const stranka = kandidatStrankaMap[pobjednik.trim()] || pobjednik.trim();
+              winner = {
+                stranka: stranka,
+                kandidat: pobjednik.trim(),
+                postotak: postotak.toFixed(1),
+                krug: round
+              };
+              break; // imamo pobjednika
+            }
+
+          } catch (err) {
+            console.warn(`⚠️ Greška za ${zupanija}:`, err);
+          }
+        }
+
+        if (winner) {
+          console.log(`✅ ${zupanija} – ${winner.kandidat} (${winner.stranka}), ${winner.postotak}% u ${winner.krug}`);
+          winnerMap[zupanija] = winner.stranka;
+        } else {
+          console.warn(`⚪ ${zupanija} – Nema pobjednika s >50% u dostupnim krugovima`);
+        }
+      }
+
+      svg.selectAll("path").each(function (d) {
+        const raw = d.properties.NAME_1 || d.properties.NAME;
+        const name = getFullName(raw);
+        const kandidat = winnerMap[name];
+        if (kandidat) {
+          const boja = getColorForWinner(kandidat);
+          d3.select(this).attr("fill", boja);
+        } else {
+          d3.select(this).attr("fill", "#ccc");
+        }
+      });
+    }
 
 
 
-    // Prikaz tooltippa i info boxa s mapiranjem imena i pozivanjem podataka
-    function drawMap(geojsonData) {
+
+    // Glavna funkcija za crtanje mape
+    async function drawMap(geojsonData, isMunicipalities = false) {
       svg.selectAll("*").remove();
-
       projection.fitSize([width * 0.7, height], geojsonData);
+
+      legend.style("display", isMunicipalities ? "block" : "none");
 
       svg.selectAll("path")
         .data(geojsonData.features)
@@ -260,8 +478,8 @@ function getPrefixedZupanija(name) {
         .attr("fill", "#cce5df")
         .attr("stroke", "#2a6351")
         .attr("stroke-width", 1)
-        .on("mouseover", function(event, d) {
-          d3.select(this).attr("fill", "#4c9e8f");
+        .on("mouseover", function (event, d) {
+          d3.select(this).attr("stroke", "#ffffff").attr("stroke-width", 2);
           const geoName = d.properties.NAME_2 || d.properties.NAME_1;
           const fullName = getFullName(geoName);
 
@@ -271,129 +489,427 @@ function getPrefixedZupanija(name) {
             .style("top", (event.pageY + 15) + "px")
             .style("left", (event.pageX + 15) + "px");
         })
-        .on("mouseout", function() {
-          d3.select(this).attr("fill", "#cce5df");
-          tooltip.style("visibility", "hidden")
-            .style("opacity", 0);
+        .on("mouseout", function () {
+          d3.select(this).attr("stroke", "#2a6351").attr("stroke-width", 1);
+          tooltip.style("visibility", "hidden").style("opacity", 0);
         })
-        .on("click", function(event, d) {
-  const geoName = d.properties.NAME_2 || d.properties.NAME_1;
-  const fullName = getFullName(geoName);
+        .on("click", async function (event, d) {
+          const geoName = d.properties.NAME_2 || d.properties.NAME_1;
+          const fullName = getFullName(geoName);
+          const rawZupanija = d.properties.NAME_1;
+          const zupanijaNumber = getPrefixedZupanija(rawZupanija);
+          const zupanija = getFullName(rawZupanija);
+          const opcinaRaw = d.properties.NAME_2 || d.properties.NAME_1;
+          const opcina = opcinaRaw ? normalizeName(opcinaRaw) : "";
 
-  const rawZupanija = d.properties.NAME_1;
-  const zupanijaNumber = getPrefixedZupanija(rawZupanija);
-  const zupanija = getFullName(rawZupanija);
+          const baseFileName = `${zupanijaNumber}_${opcina.toUpperCase()}`;
+          console.log("Kliknut path:", d.properties);
 
-  const opcina = d.properties.NAME_2 || d.properties.NAME_1;
+          if (!mapSwitch.checked) {
+            // === GRAF ZA ŽUPANIJU ==
+            try {
+              const rounds = [];
+              if (selectedRound === "3_krug_rezultati") {
+                rounds.push("3_krug_rezultati", "2_krug_rezultati", "1_krug_rezultati");
+              } else if (selectedRound === "2_krug_rezultati") {
+                rounds.push("2_krug_rezultati", "1_krug_rezultati");
+              } else {
+                rounds.push("1_krug_rezultati");
+              }
 
-  const url = `rezultati/${selectedRound}/${zupanijaNumber}_${zupanija}/CSV/${zupanijaNumber}_${opcina.toUpperCase()}_općinska vijeće.csv`;
+              let usedRound = null;
+              let parsed = null;
+              for (const round of rounds) {
+                const rawZupanija = d.properties.NAME_1 || d.properties.NAME;
+                const zupanija = getFullName(rawZupanija);
+                const zupanijaNumber = getPrefixedZupanija(rawZupanija);
+                const folder = `${zupanijaNumber}_${zupanija}`;
+                const file = zupanijaNumber === "21" ? "21_GRAD_ZAGREB_gradonačelnik.csv" : `${zupanijaNumber}_župani.csv`;
+                const url = `rezultati/${round}/${folder}/CSV/${file}`;
 
-  console.log("Fetch URL:", url);
+                const response = await fetch(url);
+                if (!response.ok) continue;
 
-  fetch(url)
-    .then(response => {
-      if (!response.ok) throw new Error("Nema podataka za ovu jedinicu.");
-      return response.text();
-    })
-    .then(data => {
-      // Koristi d3.dsvFormat sa separatorom ';'
-      const dsvParser = d3.dsvFormat(";");
-      const parsed = dsvParser.parse(data, d3.autoType);
+                const text = await response.text();
+                const parser = d3.dsvFormat(";");
+                const data = parser.parse(text);
+                if (!data || data.length === 0) continue;
 
-      if (!parsed || parsed.length === 0) throw new Error("Prazni podaci.");
+                usedRound = round;
+                parsed = { data, columns: parser.parseRows(text)[0] };
+                break;
+              }
 
-      // Uzimamo prvi red (ili ih možeš grupirati ako ima više BM-ova po općini)
-      const row = parsed[0];
+              if (!parsed) throw new Error("Nema podataka za ovu županiju.");
 
-      // Nađi indeks zadnje fiksne kolone
-      const allColumns = parsed.columns;
-      console.log("Sve kolone:", allColumns);
+              const allColumns = parsed.columns;
+              const startIndex = allColumns.indexOf("Nevažeći listići");
+              const kandidatStupci = allColumns.slice(startIndex + 1);
 
-      const startIndex = allColumns.findIndex(col => col === "Nevažeći listići");
-      console.log("Index 'nevažeći':", startIndex);
+              const sumaPoKandidatu = {};
+              parsed.data.forEach(row => {
+                kandidatStupci.forEach(kandidat => {
+                  const ime = kandidat.trim();
+                  const glasova = +row[kandidat] || 0;
+                  sumaPoKandidatu[ime] = (sumaPoKandidatu[ime] || 0) + glasova;
+                });
+              });
 
-      // Stranke su sve kolone nakon tog indeksa
-      const partyColumns = allColumns.slice(startIndex + 1);
+              const chartData = Object.entries(sumaPoKandidatu).map(([lista, glasova]) => ({ lista, glasova }));
+              chartData.sort((a, b) => b.glasova - a.glasova);
+              const totalGlasova = chartData.reduce((sum, d) => sum + d.glasova, 0);
 
-      const chartData = partyColumns.map(party => ({
-        lista: party.trim(),
-        glasova: +row[party] || 0
-      })).filter(d => d.glasova > 0); // možeš izbaciti one s 0
+              const chartWidth = 450;
+              const chartHeight = 320;
+              const margin = { top: 30, right: 20, bottom: 60, left: 60 };
 
-      console.log("chartData:", chartData);
+              const x = d3.scaleBand()
+                .domain(chartData.map(d => d.lista))
+                .range([margin.left, chartWidth - margin.right])
+                .padding(0.1);
 
-      // (opcionalno: sortiraj i uzmi top 10)
-      chartData.sort((a, b) => b.glasova - a.glasova);
-      // const topN = 10;
-      // const displayData = chartData.slice(0, topN);
-      const displayData = chartData;
+              const y = d3.scaleLinear()
+                .domain([0, d3.max(chartData, d => d.glasova)]).nice()
+                .range([chartHeight - margin.bottom, margin.top]);
 
-      // Dimenzije
-      const chartWidth = 450;
-      const chartHeight = 320;
-      const margin = { top: 30, right: 20, bottom: 60, left: 60 };
+              const rawZupanija = d.properties.NAME_1 || d.properties.NAME;
+              const zupanija = getFullName(rawZupanija);
 
-      const x = d3.scaleBand()
-        .domain(displayData.map(d => d.lista))
-        .range([margin.left, chartWidth - margin.right])
-        .padding(0.1);
+              infoBox.classed("active", true);
+              infoBox.html(`
+                <h2>${zupanija} – rezultati (${usedRound.replace("_krug_rezultati", ". krug")})</h2>
+                <div id="charts-wrapper" style="display: flex; flex-direction: column; gap: 20px;">
+                  <svg id="bar-chart" width="${chartWidth}" height="${chartHeight}"></svg>
+                  <div>
+                    <h3>Izlaznost po biračkim mjestima</h3>
+                    <svg id="turnout-chart" width="${chartWidth}" height="200"></svg>
+                  </div>
+                </div>
+              `);
 
-      const y = d3.scaleLinear()
-        .domain([0, d3.max(displayData, d => d.glasova)]).nice()
-        .range([chartHeight - margin.bottom, margin.top]);
+              const svgChart = infoBox.select("#bar-chart");
 
-      infoBox.classed("active", true);
-      infoBox.html(`<h2>${fullName}</h2><svg width="${chartWidth}" height="${chartHeight}"></svg>`);
-      const svgChart = infoBox.select("svg");
+              svgChart.selectAll("rect")
+                .data(chartData)
+                .enter()
+                .append("rect")
+                .attr("x", d => x(d.lista))
+                .attr("y", y(0)) // počni s dna
+                .attr("height", 0) // početna visina nula
+                .attr("width", x.bandwidth())
+                .attr("fill", d => getColorForWinner(d.lista))
+                .transition()
+                .duration(800)
+                .delay((d, i) => i * 100) // lagani efekt po redu
+                .attr("y", d => y(d.glasova))
+                .attr("height", d => y(0) - y(d.glasova));
 
-      // Crtanje stupaca
-      svgChart.selectAll("rect")
-        .data(displayData)
-        .enter()
-        .append("rect")
-        .attr("x", d => x(d.lista))
-        .attr("y", d => y(d.glasova))
-        .attr("height", d => y(0) - y(d.glasova))
-        .attr("width", x.bandwidth())
-        .attr("fill", "#4c9e8f");
+              svgChart
+                .attr("viewBox", `0 0 ${chartWidth} ${chartHeight}`)
+                .attr("preserveAspectRatio", "xMidYMid meet");
 
-      // X os (rotirani nazivi stranaka)
-      svgChart.append("g")
-        .attr("transform", `translate(0,${chartHeight - margin.bottom})`)
-        .call(d3.axisBottom(x))
-        .selectAll("text")
-        .attr("transform", "rotate(-45)")
-        .style("text-anchor", "end");
+              svgChart.append("g")
+                .attr("transform", `translate(0,${chartHeight - margin.bottom})`)
+                .call(d3.axisBottom(x))
+                .selectAll("text")
+                .attr("transform", "rotate(-45)")
+                .style("text-anchor", "end");
 
-      // Y os
-      svgChart.append("g")
-        .attr("transform", `translate(${margin.left},0)`)
-        .call(d3.axisLeft(y));
+              svgChart.append("g")
+                .attr("transform", `translate(${margin.left},0)`)
+                .call(d3.axisLeft(y));
 
-      if (!container.classed("shifted")) {
-        container.classed("shifted", true);
+              // === GRAF IZLAZNOSTI ===
+              const turnoutData = parsed.data.map((row, index) => {
+                const glasovalo = +row["Glasovalo birača (po listićima)"] || 0;
+                const biraca = +row["Ukupno birača"] || 0;
+                return {
+                  index,
+                  izlaznost: biraca > 0 ? (glasovalo / biraca) * 100 : 0
+                };
+              });
+
+              const turnoutWidth = chartWidth;
+              const turnoutHeight = 200;
+              const turnoutMargin = { top: 20, right: 20, bottom: 40, left: 50 };
+
+              const turnoutSvg = infoBox.select("#turnout-chart");
+
+
+
+              const xLine = d3.scaleLinear()
+                .domain([0, turnoutData.length - 1])
+                .range([turnoutMargin.left, turnoutWidth - turnoutMargin.right]);
+
+              const yLine = d3.scaleLinear()
+                .domain([0, 100])
+                .range([turnoutHeight - turnoutMargin.bottom, turnoutMargin.top]);
+
+              const line = d3.line()
+                .x(d => xLine(d.index))
+                .y(d => yLine(d.izlaznost));
+
+              turnoutSvg.append("path")
+                .datum(turnoutData)
+                .attr("fill", "none")
+                .attr("stroke", "#2a6351")
+                .attr("stroke-width", 2)
+                .attr("d", line)
+                .attr("stroke-dasharray", function () {
+                  const totalLength = this.getTotalLength();
+                  return `${totalLength} ${totalLength}`;
+                })
+                .attr("stroke-dashoffset", function () {
+                  return this.getTotalLength();
+                })
+                .transition()
+                .duration(1000)
+                .attr("stroke-dashoffset", 0);
+
+              turnoutSvg.append("g")
+                .attr("transform", `translate(0,${turnoutHeight - turnoutMargin.bottom})`)
+                .call(d3.axisBottom(xLine).ticks(5));
+
+              turnoutSvg.append("g")
+                .attr("transform", `translate(${turnoutMargin.left},0)`)
+                .call(d3.axisLeft(yLine).ticks(5).tickFormat(d => d + "%"));
+
+
+              svgChart.selectAll("text.percent")
+                .data(chartData)
+                .enter()
+                .append("text")
+                .attr("class", "percent")
+                .attr("x", d => x(d.lista) + x.bandwidth() / 2)
+                .attr("y", d => y(d.glasova) + 15)
+                .attr("text-anchor", "middle")
+                .attr("fill", "white")
+                .attr("font-size", "12px")
+                .text(d => ((d.glasova / totalGlasova) * 100).toFixed(1) + "%")
+                .attr("viewBox", `0 0 ${chartWidth} ${chartHeight}`)
+  .attr("preserveAspectRatio", "xMidYMid meet");
+
+              
+
+              if (!container.classed("shifted")) {
+                container.classed("shifted", true);
+              }
+
+            } catch (err) {
+              console.error("Greška kod prikaza grafa za županiju:", err);
+              infoBox.classed("active", false);
+            }
+
+
+
+          } else {
+            // === GRAF ZA OPĆINU ===
+            const rounds = [];
+            if (selectedRound === "3_krug_rezultati") {
+              rounds.push("3_krug_rezultati", "2_krug_rezultati", "1_krug_rezultati");
+            } else if (selectedRound === "2_krug_rezultati") {
+              rounds.push("2_krug_rezultati", "1_krug_rezultati");
+            } else {
+              rounds.push("1_krug_rezultati");
+            }
+
+            let data = null;
+            let usedRound = null;
+
+            for (const round of rounds) {
+              const baseUrl = `rezultati/${round}/${zupanijaNumber}_${zupanija}/CSV/`;
+              const urls = [
+                `${baseUrl}${baseFileName}_načelnik.csv`,
+                `${baseUrl}${baseFileName}_gradonačelnik.csv`
+              ];
+
+              for (const url of urls) {
+                try {
+                  const response = await fetch(url);
+                  if (response.ok) {
+                    data = await response.text();
+                    usedRound = round;
+                    break;
+                  }
+                } catch (err) {
+                  console.warn(`Greška kod dohvaćanja ${url}`);
+                }
+              }
+              if (data) break;
+            }
+
+            try {
+              if (!data) throw new Error("Nema podataka");
+
+              const dsvParser = d3.dsvFormat(";");
+              const parsed = dsvParser.parse(data, d3.autoType);
+
+              if (!parsed || parsed.length === 0) throw new Error("Prazni podaci");
+
+              const row = parsed[0];
+              const allColumns = parsed.columns;
+              const startIndex = allColumns.findIndex(col => col === "Nevažeći listići");
+              const partyColumns = allColumns.slice(startIndex + 1);
+
+              const chartData = partyColumns.map(party => ({
+                lista: party.trim(),
+                glasova: +row[party] || 0
+              })).filter(d => d.glasova > 0);
+
+              chartData.sort((a, b) => b.glasova - a.glasova);
+
+              const totalGlasova = chartData.reduce((sum, d) => sum + d.glasova, 0);
+
+              const chartWidth = 450;
+              const chartHeight = 320;
+              const margin = { top: 30, right: 20, bottom: 60, left: 60 };
+
+              const x = d3.scaleBand()
+                .domain(chartData.map(d => d.lista))
+                .range([margin.left, chartWidth - margin.right])
+                .padding(0.1);
+
+              const y = d3.scaleLinear()
+                .domain([0, d3.max(chartData, d => d.glasova)]).nice()
+                .range([chartHeight - margin.bottom, margin.top]);
+
+              infoBox.classed("active", true);
+              infoBox.html(`
+                <h2>${fullName} - prikaz rezultata (${usedRound.replace("_krug_rezultati", ". krug")})</h2>
+                <svg width="${chartWidth}" height="${chartHeight}" id="main-bar-chart"></svg>
+                <h3>Izlaznost po biračkim mjestima</h3>
+                <svg width="${chartWidth}" height="200" id="turnout-chart"></svg>
+              `);
+
+              const svgChart = infoBox.select("#main-bar-chart");
+              const turnoutSvg = infoBox.select("#turnout-chart");
+              const turnoutData = parsed.map((row, i) => {
+                const glasovalo = +row["Glasovalo birača (po listićima)"] || 0;
+                const biraca = +row["Ukupno birača"] || 0;
+                return {
+                  index: i,
+                  izlaznost: biraca > 0 ? (glasovalo / biraca) * 100 : 0
+                };
+              });
+              const turnoutMargin = { top: 20, right: 20, bottom: 40, left: 50 };
+              const turnoutWidth = chartWidth;
+              const turnoutHeight = 200;
+
+              const xLine = d3.scaleLinear()
+                .domain([0, turnoutData.length - 1])
+                .range([turnoutMargin.left, turnoutWidth - turnoutMargin.right]);
+
+              const yLine = d3.scaleLinear()
+                .domain([0, 100])
+                .range([turnoutHeight - turnoutMargin.bottom, turnoutMargin.top]);
+
+              const line = d3.line()
+                .x(d => xLine(d.index))
+                .y(d => yLine(d.izlaznost));
+
+              turnoutSvg.append("path")
+                .datum(turnoutData)
+                .attr("fill", "none")
+                .attr("stroke", "#2a6351")
+                .attr("stroke-width", 2)
+                
+                .attr("d", line)
+                .attr("stroke-dasharray", function () {
+                  const totalLength = this.getTotalLength();
+                  return `${totalLength} ${totalLength}`;
+                })
+                .attr("stroke-dashoffset", function () {
+                  return this.getTotalLength();
+                })
+                .transition()
+                .duration(1000)
+                .attr("stroke-dashoffset", 0);
+
+              turnoutSvg.append("g")
+                .attr("transform", `translate(0,${turnoutHeight - turnoutMargin.bottom})`)
+                .call(d3.axisBottom(xLine).ticks(5));
+
+              turnoutSvg.append("g")
+                .attr("transform", `translate(${turnoutMargin.left},0)`)
+                .call(d3.axisLeft(yLine).ticks(5).tickFormat(d => d + "%"));
+
+
+              svgChart.selectAll("rect")
+                .data(chartData)
+                .enter()
+                .append("rect")
+                .attr("x", d => x(d.lista))
+                .attr("y", y(0)) // start from bottom
+                .attr("height", 0) // initial height = 0
+                .attr("width", x.bandwidth())
+                .attr("fill", d => getColorForWinner(d.lista))
+                .attr("viewBox", `0 0 ${chartWidth} ${chartHeight}`)
+.attr("preserveAspectRatio", "xMidYMid meet")
+
+                .transition()
+                .duration(800)
+                .delay((d, i) => i * 100)
+                .attr("y", d => y(d.glasova))
+                .attr("height", d => y(0) - y(d.glasova));
+
+
+              svgChart.append("g")
+                .attr("transform", `translate(0,${chartHeight - margin.bottom})`)
+                .call(d3.axisBottom(x))
+                .selectAll("text")
+                .attr("transform", "rotate(-45)")
+                .style("text-anchor", "end");
+
+              svgChart.append("g")
+                .attr("transform", `translate(${margin.left},0)`)
+                .call(d3.axisLeft(y));
+
+              svgChart.selectAll("text.percent")
+                .data(chartData)
+                .enter()
+                .append("text")
+                .attr("class", "percent")
+                .attr("x", d => x(d.lista) + x.bandwidth() / 2)
+                .attr("y", d => y(d.glasova) + 15)
+                .attr("text-anchor", "middle")
+                .attr("fill", "white")
+                .attr("font-size", "12px")
+                .text(d => ((d.glasova / totalGlasova) * 100).toFixed(1) + "%");
+
+              if (!container.classed("shifted")) {
+                container.classed("shifted", true);
+              }
+
+            } catch (err) {
+              console.error(err);
+              infoBox.classed("active", false);
+            }
+          }
+        });
+
+
+      if (isMunicipalities) {
+        colorMunicipalities();
       }
-    })
-    .catch(err => {
-      console.error(err);
-      infoBox.classed("active", false);
-      // Možeš dodati prikaz greške korisniku ako želiš
-    });
-});
-
+      else {
+        setTimeout(() => colorZupanijePoZupanu(), 0);
+      }
 
     }
+    const elements = svg.selectAll("path").nodes();
+    console.log("Koliko je path elemenata nacrtano:", elements.length);
 
-    // Učitavanje GeoJSON podataka i inicijalni crtež mape
+
+    // Učitavanje GeoJSON podataka
     Promise.all([
-      d3.json("cro_zupanije.json"), // zamijeni stvarnim putem do GeoJSON županija
-      d3.json("cro_opcine.json") // zamijeni stvarnim putem do GeoJSON općina
+      d3.json("cro_zupanije.json"),
+      d3.json("cro_opcine.json")
     ]).then(([regions, municipalities]) => {
       croRegions = regions;
       croMunicipalities = municipalities;
       drawMap(croRegions);
     }).catch(err => {
-      console.error("Greška prilikom učitavanja GeoJSON-a:", err);
+      console.error("Greška pri učitavanju GeoJSON-a:", err);
     });
 
     // Switch županije/općine
@@ -402,10 +918,11 @@ function getPrefixedZupanija(name) {
 
     mapSwitch.addEventListener("change", () => {
       if (mapSwitch.checked) {
-        drawMap(croMunicipalities);
+        drawMap(croMunicipalities, true);
         sliderLabel.textContent = "Općine";
       } else {
         drawMap(croRegions);
+        colorZupanije();
         sliderLabel.textContent = "Županije";
       }
       infoBox.classed("active", false);
@@ -414,6 +931,7 @@ function getPrefixedZupanija(name) {
 
     // Gumbi za krugove izbora
     const roundButtons = document.querySelectorAll(".round-btn");
+
     roundButtons.forEach(btn => {
       btn.addEventListener("click", () => {
         roundButtons.forEach(b => b.classList.remove("active"));
@@ -422,9 +940,26 @@ function getPrefixedZupanija(name) {
 
         infoBox.classed("active", false);
         container.classed("shifted", false);
+
+        if (mapSwitch.checked) {
+          drawMap(croMunicipalities, true); // općine
+        } else {
+          drawMap(croRegions); // županije
+        }
       });
     });
 
+
+
+    // Responsive design
+    window.addEventListener("resize", () => {
+      if (mapSwitch.checked) {
+        drawMap(croMunicipalities, true);
+      } else {
+        drawMap(croRegions);
+      }
+    });  
   </script>
 </body>
+
 </html>
